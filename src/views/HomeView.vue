@@ -1,7 +1,14 @@
 <script setup>
-import { ref } from "vue";
+import { onBeforeUnmount, ref } from "vue";
 import Card from "../components/Card.vue";
 import SearchBar from "../components/SearchBar.vue";
+import { homeScrollY } from "../composables/useScrollStore.js";
+
+onBeforeUnmount(() => {
+  console.log("scroll: " + window.scrollY);
+
+  homeScrollY.value = window.scrollY;
+});
 
 const searchQuery = ref("");
 const errorMsg = ref("");

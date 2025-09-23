@@ -6,6 +6,45 @@ const error = ref("");
 const details = reactive(new Map());
 const expanded = reactive(new Set());
 
+const DETAIL_STORAGE_PREFIX = "pokedex:detail:";
+const REQUIRED_STATS_KEYS = [
+  "hp",
+  "attack",
+  "defense",
+  "speed",
+  "special-attack",
+  "special-defense",
+];
+
+function loadDetailFromStorage(id) {
+  try {
+    const raw = localStorage.getItem(`${DETAIL_STORAGE_PREFIX}${id}`);
+    if (!raw) return null;
+    const data = JSON.parse(raw);
+
+    const hasBasics =
+      data && typeof data.id === "number" && typeof data.name === "string";
+    const hasStats =
+      data &&
+      data.stats &&
+      typeof data.stats === "object" &&
+      REQUIRED_STATS_KEYS.some((k) => typeof data.stats[k] === "number");
+    if (hasBasics && hasStats) {
+      details.set(id, data);
+      return data;
+    }
+
+    localStorage.removeItem(`${DETAIL_STORAGE_PREFIX}${id}`);
+  } catch (_) {}
+  return null;
+}
+
+function persistDetail(id, info) {
+  try {
+    localStorage.setItem(`${DETAIL_STORAGE_PREFIX}${id}`, JSON.stringify(info));
+  } catch (_) {}
+}
+
 export function usePokedex() {
   async function loadList(limit = 151, offset = 0) {
     loading.value = true;
@@ -35,25 +74,44 @@ export function usePokedex() {
 
   async function ensureDetails(id) {
     if (details.has(id)) return details.get(id);
+
+    const cached = loadDetailFromStorage(id);
+    if (cached) return cached;
+
     const [p, s] = await Promise.all([
       fetch(`https://pokeapi.co/api/v2/pokemon/${id}`).then((r) => r.json()),
       fetch(`https://pokeapi.co/api/v2/pokemon-species/${id}`).then((r) =>
         r.json()
       ),
     ]);
+
+    const statMap = Object.fromEntries(
+      p.stats.map((st) => [st.stat.name, st.base_stat])
+    );
+    const esFlavor = s.flavor_text_entries.find(
+      (f) => f.language.name === "es"
+    );
+    const enFlavor = s.flavor_text_entries.find(
+      (f) => f.language.name === "en"
+    );
+
     const info = {
+      id,
+      name: p.name,
+      imageUrl: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`,
       types: p.types.map((t) => t.type.name),
-      heightM: (p.height / 10).toFixed(1),
-      weightKg: (p.weight / 10).toFixed(1),
+      heightM: parseFloat((p.height / 10).toFixed(1)),
+      weightKg: parseFloat((p.weight / 10).toFixed(1)),
       abilities: p.abilities.map((a) => a.ability.name),
-      stats: Object.fromEntries(p.stats.map((s) => [s.stat.name, s.base_stat])),
-      flavor:
-        (
-          s.flavor_text_entries.find((f) => f.language.name === "es") ??
-          s.flavor_text_entries.find((f) => f.language.name === "es")
-        )?.flavor_text?.replace(/\f/g, " ") || "",
+      stats: statMap,
+      flavor: (esFlavor?.flavor_text || enFlavor?.flavor_text || "").replace(
+        /\f|\n/g,
+        " "
+      ),
     };
+
     details.set(id, info);
+    persistDetail(id, info);
     return info;
   }
 

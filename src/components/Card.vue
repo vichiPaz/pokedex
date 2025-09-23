@@ -1,7 +1,13 @@
 <script setup>
 import { useAuth } from "@/composables/useAuth.js";
 import { computed, defineProps, onMounted, ref, watch } from "vue";
+import { useRouter } from "vue-router";
 import { usePokedex } from "../composables/usePokedex.js";
+const router = useRouter();
+
+function goToDetails(p) {
+  router.push({ name: "PokemonDetails", params: { id: p.id } });
+}
 
 const props = defineProps({
   search: { type: String, default: "" },
@@ -23,7 +29,9 @@ const {
 const { user } = useAuth();
 
 onMounted(async () => {
-  await loadList(151, 0);
+  if (!list.value || list.value.length === 0) {
+    await loadList(151, 0);
+  }
 });
 
 const globalKey = "fav:pokemon";
@@ -213,12 +221,21 @@ const typeColors = {
             </div>
 
             <!-- BACK -->
-            <div class="flip-card-back card custom-card p-3">
-              <div v-if="details.get(p.id)" class="poke-back">
-                <h4 class="text-center">
-                  #{{ pad3(p.id) }} - {{ p.name.toUpperCase() }}
-                </h4>
-                <div class="d-flex justify-content-center gap-3 my-2">
+            <div
+              class="flip-card-back card custom-card p-3 d-flex flex-column justify-content-between align-items-stretch"
+            >
+              <div
+                v-if="details.get(p.id)"
+                class="poke-back w-100 p-2 flex-column flex-grow-1 d-flex text-center"
+              >
+                <header
+                  class="d-flex justify-content-between align-items-center gap-2 mb-4 w-100"
+                >
+                  <span class="fw-bold">#{{ pad3(p.id) }}</span>
+                  <span class="fw-bold">{{ p.name.toUpperCase() }}</span>
+                </header>
+
+                <div class="justify-content-between gap-3 mb-2">
                   <div>
                     <strong>Altura:</strong> {{ details.get(p.id).heightM }}m
                   </div>
@@ -227,34 +244,87 @@ const typeColors = {
                   </div>
                 </div>
 
-                <h5 class="text-center mt-3">Habilidades:</h5>
-                <div class="d-flex flex-wrap gap-2 justify-content-center mb-1">
+                <h6 class="mt-3"><strong>Habilidades</strong></h6>
+                <div class="d-flex justify-content-center flex-wrap mb-3">
                   <span
-                    class="ability text-capitalize"
                     v-for="ab in details.get(p.id).abilities"
                     :key="ab"
-                    >{{ ab }}</span
+                    class="ability text-capitalize m-1"
                   >
+                    {{ ab }}
+                  </span>
                 </div>
 
-                <h5 class="text-center mt-3">Estadísticas:</h5>
-                <div class="stats">
-                  <div
-                    class="stat"
-                    v-for="(val, key) in details.get(p.id).stats"
-                    :key="key"
-                  >
-                    <span class="label text-sm-start"
-                      >{{ key.toLowerCase().replace("special-", "sp.") }}:</span
-                    >
+                <h6 class="mt-1"><strong>Estadísticas</strong></h6>
+                <div class="stats mb-auto">
+                  <div class="stat">
+                    <span class="label">HP:</span>
                     <span class="bar"
                       ><span
                         class="fill"
-                        :style="{ width: Math.min(val, 100) + '%' }"
+                        :style="{
+                          width:
+                            Math.min(details.get(p.id).stats.hp, 100) + '%',
+                        }"
                       ></span
                     ></span>
-                    <span class="value">{{ val }}</span>
+                    <span class="value">{{ details.get(p.id).stats.hp }}</span>
                   </div>
+                  <div class="stat">
+                    <span class="label">Attack:</span>
+                    <span class="bar"
+                      ><span
+                        class="fill"
+                        :style="{
+                          width:
+                            Math.min(details.get(p.id).stats.attack, 100) + '%',
+                        }"
+                      ></span
+                    ></span>
+                    <span class="value">{{
+                      details.get(p.id).stats.attack
+                    }}</span>
+                  </div>
+                  <div class="stat">
+                    <span class="label">Defense:</span>
+                    <span class="bar"
+                      ><span
+                        class="fill"
+                        :style="{
+                          width:
+                            Math.min(details.get(p.id).stats.defense, 100) +
+                            '%',
+                        }"
+                      ></span
+                    ></span>
+                    <span class="value">{{
+                      details.get(p.id).stats.defense
+                    }}</span>
+                  </div>
+                  <div class="stat">
+                    <span class="label">Speed:</span>
+                    <span class="bar"
+                      ><span
+                        class="fill"
+                        :style="{
+                          width:
+                            Math.min(details.get(p.id).stats.speed, 100) + '%',
+                        }"
+                      ></span
+                    ></span>
+                    <span class="value">{{
+                      details.get(p.id).stats.speed
+                    }}</span>
+                  </div>
+                </div>
+
+                <div class="text-center mt-3" v-if="details.get(p.id)">
+                  <button
+                    class="btn custom-btn__card w-100"
+                    @click.stop="goToDetails(p)"
+                  >
+                    Ver detalles
+                  </button>
                 </div>
               </div>
               <div v-else class="text-center py-5">Cargando detalles…</div>
@@ -368,5 +438,14 @@ const typeColors = {
   justify-content: center;
   align-items: center;
   overflow: hidden;
+}
+
+.custom-btn__card {
+  border: 1px solid rgb(136, 176, 5);
+  color: rgb(3, 50, 10);
+}
+
+.custom-btn__card:hover {
+  background-color: rgb(136, 176, 5);
 }
 </style>

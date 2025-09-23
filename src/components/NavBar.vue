@@ -48,7 +48,7 @@ function logoutAndRedirect() {
 a {
   color: rgb(3, 50, 10);
   text-decoration: none;
-  font-size: 16px;
+  font-size: 18px;
   display: inline-block;
   padding: 8px;
 }
