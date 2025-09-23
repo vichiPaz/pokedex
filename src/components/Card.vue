@@ -1,8 +1,10 @@
 <script setup>
-import { useAuth } from "@/composables/useAuth.js";
-import { computed, defineProps, onMounted, ref, watch } from "vue";
+import { useFavorites } from "@/composables/useFavorites.js";
+import { computed, defineProps, onMounted, watch } from "vue";
 import { useRouter } from "vue-router";
 import { usePokedex } from "../composables/usePokedex.js";
+
+const { isFav, toggleFavLocal } = useFavorites();
 const router = useRouter();
 
 function goToDetails(p) {
@@ -17,7 +19,6 @@ const emit = defineEmits(["no-results", "has-results"]);
 const {
   list,
   loading,
-  error,
   details,
   loadList,
   ensureDetails,
@@ -26,60 +27,10 @@ const {
   isExpanded,
 } = usePokedex();
 
-const { user } = useAuth();
-
 onMounted(async () => {
   if (!list.value || list.value.length === 0) {
     await loadList(151, 0);
   }
-});
-
-const globalKey = "fav:pokemon";
-const favIds = ref([]);
-
-const storageKey = computed(() => {
-  const u = user?.value;
-  return u?.email ? `favorites:${u.email}` : globalKey;
-});
-
-function readFav() {
-  try {
-    const raw = localStorage.getItem(storageKey.value);
-    const arr = raw ? JSON.parse(raw) : [];
-
-    const num = Array.from(
-      new Set((arr || []).map((x) => Number(x)).filter((x) => !Number.isNaN(x)))
-    );
-    favIds.value = num;
-  } catch {
-    favIds.value = [];
-  }
-}
-
-function writeFav(arr) {
-  localStorage.setItem(storageKey.value, JSON.stringify(arr));
-}
-
-function isFav(id) {
-  return favIds.value.includes(Number(id));
-}
-
-function toggleFavLocal(id) {
-  const nid = Number(id);
-  const set = new Set(favIds.value);
-  if (set.has(nid)) set.delete(nid);
-  else set.add(nid);
-  favIds.value = [...set];
-  writeFav(favIds.value);
-}
-
-onMounted(() => {
-  readFav();
-});
-watch(storageKey, () => readFav());
-
-window.addEventListener("storage", (e) => {
-  if (e.key === storageKey.value) readFav();
 });
 
 const filtered = computed(() => {
