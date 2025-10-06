@@ -1,3 +1,4 @@
+import axios from "axios";
 import { reactive, ref } from "vue";
 
 const list = ref([]);
@@ -50,10 +51,9 @@ export function usePokedex() {
     loading.value = true;
     error.value = "";
     try {
-      const res = await fetch(
+      const { data } = await axios.get(
         `https://pokeapi.co/api/v2/pokemon?limit=${limit}&offset=${offset}`
       );
-      const data = await res.json();
 
       await new Promise((resolve) => setTimeout(resolve, 800));
       list.value = (data.results || []).map((it) => {
@@ -79,10 +79,10 @@ export function usePokedex() {
     if (cached) return cached;
 
     const [p, s] = await Promise.all([
-      fetch(`https://pokeapi.co/api/v2/pokemon/${id}`).then((r) => r.json()),
-      fetch(`https://pokeapi.co/api/v2/pokemon-species/${id}`).then((r) =>
-        r.json()
-      ),
+      axios.get(`https://pokeapi.co/api/v2/pokemon/${id}`).then((r) => r.data),
+      axios
+        .get(`https://pokeapi.co/api/v2/pokemon-species/${id}`)
+        .then((r) => r.data),
     ]);
 
     const statMap = Object.fromEntries(
