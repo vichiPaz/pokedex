@@ -23,7 +23,7 @@ function logoutAndRedirect() {
         <span class="navbar-greeting"> Hola, {{ user.name }}</span>
 
         <button class="btn custom-btn__logout" @click="logoutAndRedirect">
-          Cerrar Sesión
+          Salir <font-awesome-icon :icon="['far', 'circle-right']" />
         </button>
       </template>
     </nav>
@@ -66,6 +66,7 @@ a:hover {
 }
 
 .custom-btn__logout:hover {
-  background-color: rgb(136, 176, 5);
+  background-color: rgb(148, 15, 49);
+  color: rgb(245, 235, 243);
 }
 </style>

@@ -4,10 +4,13 @@ import { createApp } from "vue";
 import App from "./App.vue";
 import router from "./router";
 
-import { faHeart as farFaHeart } from "@fortawesome/free-regular-svg-icons";
+import {
+  faCircleRight,
+  faHeart as farFaHeart,
+} from "@fortawesome/free-regular-svg-icons";
 import { faHeart as fasFaHeart } from "@fortawesome/free-solid-svg-icons";
 
-library.add(fasFaHeart, farFaHeart);
+library.add(fasFaHeart, farFaHeart, faCircleRight);
 
 const app = createApp(App);
 

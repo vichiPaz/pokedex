@@ -146,7 +146,7 @@ function switchToRegister() {
 
 <template>
   <form v-if="!isLoginMode" @submit.prevent="handleSubmit">
-    <div class="mb-3">
+    <div class="mb-3 w-75">
       <label class="form-label custom-label">Nombre</label>
       <input
         id="nameInput"
@@ -160,7 +160,7 @@ function switchToRegister() {
         {{ nameError }}
       </div>
     </div>
-    <div class="mb-3">
+    <div class="mb-3 w-75">
       <label class="form-label custom-label">Email</label>
       <input
         id="emailInput"
@@ -174,7 +174,7 @@ function switchToRegister() {
         {{ emailError }}
       </div>
     </div>
-    <div class="mb-3">
+    <div class="mb-3 w-75">
       <label class="form-label custom-label">Contraseña</label>
       <input
         id="pswrdInput"
