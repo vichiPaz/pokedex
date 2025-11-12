@@ -1,20 +1,20 @@
 <script setup>
 import UserLogin from "@/components/UserLogin.vue";
-import { useAuth } from "@/composables/useAuth.js";
-import { useRouter } from "vue-router";
+// import { useAuth } from "@/composables/useAuth.js"; // No longer needed here
+// import { useRouter } from "vue-router"; // No longer needed here
 
-const { login } = useAuth();
-const router = useRouter();
+// const { login } = useAuth(); // No longer needed here
+// const router = useRouter(); // No longer needed here
 
-function onSubmitted(payload) {
-  login(payload);
-  router.push("/favorites");
-}
+// function onSubmitted(payload) { // No longer needed here
+//   login(payload);
+//   router.push("/favorites");
+// }
 </script>
 
 <template>
   <section class="custom-container">
-    <UserLogin class="userLogin-container" @submitted="onSubmitted" />
+    <UserLogin class="userLogin-container" />
   </section>
 </template>
 

@@ -1,33 +1,24 @@
 <script setup>
 import { computed, ref } from "vue";
+import { useAuth } from "@/composables/useAuth.js"; // Import useAuth
+import { useRouter } from "vue-router"; // Import useRouter
 
 const emit = defineEmits(["submitted"]);
 const isLoginMode = ref(false);
 
-const name = ref("");
+const { login, register, authError } = useAuth(); // Get Firebase functions and error
+const router = useRouter();
+
 const pswrd = ref("");
 const email = ref("");
 
 const loginEmail = ref("");
 const loginPassword = ref("");
-const loginError = ref("");
 
-const nameError = ref("");
 const emailError = ref("");
 const pswrdError = ref("");
 
 // ---- VALIDACIONES ----
-function validateName() {
-  const v = (name.value || "").trim();
-  if (!v) return (nameError.value = "El nombre es obligatorio"), false;
-  if (v.length < 2 || v.length > 40)
-    return (nameError.value = "Debe tener entre 2 y 40 caracteres"), false;
-  if (/[^A-Za-zÁÉÍÓÚáéíóúÑñÜü\s']/u.test(v))
-    return (nameError.value = "Sólo letras y espacios"), false;
-  nameError.value = "";
-  return true;
-}
-
 function validateEmail() {
   const v = (email.value || "").trim().toLowerCase();
   const re = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
@@ -41,7 +32,8 @@ function validateEmail() {
 function validatePassword() {
   const v = pswrd.value || "";
   if (!v) return (pswrdError.value = "La contraseña es obligatoria"), false;
-  if (v.length < 8) return (pswrdError.value = "Mínimo 8 caracteres"), false;
+  if (v.length < 6) return (pswrdError.value = "Mínimo 6 caracteres"), false; // Firebase min password length is 6
+  // Firebase doesn't enforce character types, but we can keep it for client-side UX
   if (!/[A-Za-z]/.test(v) || !/\d/.test(v))
     return (pswrdError.value = "Debe incluir letras y números"), false;
   if (/\s/.test(v)) return (pswrdError.value = "Sin espacios"), false;
@@ -49,117 +41,69 @@ function validatePassword() {
   return true;
 }
 
-function validateAll() {
-  return validateName() && validateEmail() && validatePassword();
+function validateAllRegister() {
+  return validateEmail() && validatePassword();
 }
 
-const isFormValid = computed(() => {
+const isRegisterFormValid = computed(() => {
   return (
-    !nameError.value &&
     !emailError.value &&
     !pswrdError.value &&
-    !!name.value &&
     !!email.value &&
     !!pswrd.value
   );
 });
 
 // ---- FLUJOS ----
-function handleSubmit() {
-  name.value = (name.value || "").trim();
+async function handleSubmit() {
   email.value = (email.value || "").trim().toLowerCase();
 
-  if (!validateAll()) return;
+  if (!validateAllRegister()) return;
 
-  let storedUsers = [];
   try {
-    storedUsers = JSON.parse(localStorage.getItem("auth:users")) || [];
-  } catch {
-    storedUsers = [];
+    await register({ email: email.value, password: pswrd.value });
+    router.push("/favorites"); // Redirect on successful registration
+  } catch (error) {
+    // authError.value is already set by useAuth
+    console.error("Registration failed:", error);
   }
-
-  storedUsers = storedUsers.filter((u) => typeof u?.email === "string");
-
-  const existingUser = storedUsers.find(
-    (u) => u.email.toLowerCase() === email.value
-  );
-
-  if (existingUser) {
-    isLoginMode.value = true;
-    loginError.value =
-      "El email ya está registrado, por favor ingresa tu contraseña.";
-    loginEmail.value = email.value;
-
-    return;
-  }
-
-  emit("submitted", {
-    name: name.value,
-    email: email.value,
-    pswrd: pswrd.value,
-  });
 }
 
-function handleLogin() {
-  loginError.value = "";
-
+async function handleLogin() {
   const enteredEmail = (loginEmail.value || "").trim().toLowerCase();
   const enteredPassword = loginPassword.value || "";
 
   if (!enteredEmail) {
-    loginError.value = "El email es obligatorio";
+    authError.value = "El email es obligatorio"; // Set error directly to authError
     return;
   }
   if (!enteredPassword) {
-    loginError.value = "La contraseña es obligatoria";
+    authError.value = "La contraseña es obligatoria"; // Set error directly to authError
     return;
   }
 
-  let storedUsers = [];
   try {
-    storedUsers = JSON.parse(localStorage.getItem("auth:users")) || [];
-  } catch {
-    storedUsers = [];
+    await login({ email: enteredEmail, password: enteredPassword });
+    router.push("/favorites"); // Redirect on successful login
+  } catch (error) {
+    // authError.value is already set by useAuth
+    console.error("Login failed:", error);
   }
-
-  storedUsers = storedUsers.filter(
-    (u) => typeof u?.email === "string" && typeof u?.pswrd === "string"
-  );
-
-  const matchedUser = storedUsers.find(
-    (u) => u.email.toLowerCase() === enteredEmail && u.pswrd === enteredPassword
-  );
-
-  if (!matchedUser) {
-    loginError.value = "Email o contraseña incorrectos";
-    return;
-  }
-
-  localStorage.setItem("auth:user", JSON.stringify(matchedUser));
-  emit("submitted", matchedUser);
 }
 
 function switchToRegister() {
   isLoginMode.value = false;
+  authError.value = null; // Clear error when switching forms
+}
+
+function switchToLogin() {
+  isLoginMode.value = true;
+  authError.value = null; // Clear error when switching forms
 }
 </script>
 
 <template>
   <form v-if="!isLoginMode" @submit.prevent="handleSubmit">
-    <div class="mb-3 w-75">
-      <label class="form-label custom-label">Nombre</label>
-      <input
-        id="nameInput"
-        type="text"
-        v-model.trim="name"
-        @input="validateName"
-        :class="['form-control', { 'is-invalid': nameError }]"
-        required
-      />
-      <div class="invalid-feedback d-block" v-if="nameError">
-        {{ nameError }}
-      </div>
-    </div>
     <div class="mb-3 w-75">
       <label class="form-label custom-label">Email</label>
       <input
@@ -182,10 +126,10 @@ function switchToRegister() {
         v-model="pswrd"
         @input="validatePassword"
         :class="['form-control', { 'is-invalid': pswrdError }]"
-        minlength="8"
+        minlength="6"
         required
       />
-      <div class="form-text">Mín. 8 caracteres, con letras y números.</div>
+      <div class="form-text">Mín. 6 caracteres, con letras y números.</div>
       <div class="invalid-feedback d-block" v-if="pswrdError">
         {{ pswrdError }}
       </div>
@@ -195,18 +139,22 @@ function switchToRegister() {
       Nunca compartiremos tus datos con terceros.
     </div>
 
+    <div class="invalid-feedback d-block" v-if="authError">
+      {{ authError }}
+    </div>
+
     <div>
       <button
         type="button"
         class="btn custom-btn__link mx-2"
-        @click="isLoginMode = true"
+        @click="switchToLogin"
       >
         Ya tengo una cuenta
       </button>
       <button
         type="submit"
         class="btn custom-btn mx-2"
-        :disabled="!isFormValid"
+        :disabled="!isRegisterFormValid"
       >
         Registrar
       </button>
@@ -236,8 +184,8 @@ function switchToRegister() {
         required
       />
     </div>
-    <div class="invalid-feedback d-block" v-if="loginError">
-      {{ loginError }}
+    <div class="invalid-feedback d-block" v-if="authError">
+      {{ authError }}
     </div>
     <div class="mb-3">
       <button

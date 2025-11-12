@@ -1,52 +1,68 @@
 import { computed, ref } from "vue";
+import {
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged,
+  createUserWithEmailAndPassword, // Import for registration
+} from "firebase/auth";
+import { auth } from "@/firebase"; // Import the auth instance
 
 const user = ref(null);
+const authError = ref(null); // To store Firebase authentication errors
 
-function loadFromStorage() {
-  try {
-    const raw = localStorage.getItem("auth:user");
-    user.value = raw ? JSON.parse(raw) : null;
-  } catch (error) {
+// Set up an authentication state listener
+onAuthStateChanged(auth, (firebaseUser) => {
+  if (firebaseUser) {
+    // User is signed in
+    user.value = {
+      uid: firebaseUser.uid,
+      email: firebaseUser.email,
+      // You can add more user properties if needed from firebaseUser
+    };
+  } else {
+    // User is signed out
     user.value = null;
   }
-}
+});
 
-loadFromStorage();
-
-export function login({ email, name, pswrd }) {
-  user.value = { email, name, pswrd };
-  localStorage.setItem("auth:user", JSON.stringify(user.value));
-
-  let users = [];
+export async function register({ email, password }) {
+  authError.value = null; // Clear previous errors
   try {
-    users = JSON.parse(localStorage.getItem("auth:users")) || [];
-  } catch {
-    users = [];
-  }
-
-  users = users.filter((u) => typeof u?.email === "string");
-
-  const exists = users.some(
-    (u) => u.email.toLowerCase() === email.toLowerCase()
-  );
-  if (!exists) {
-    users.push({ email, name, pswrd });
-    localStorage.setItem("auth:users", JSON.stringify(users));
+    await createUserWithEmailAndPassword(auth, email, password);
+    // onAuthStateChanged listener will update the user ref
+  } catch (error) {
+    authError.value = error.message;
+    console.error("Firebase registration error:", error.message);
+    throw error; // Re-throw to allow components to handle it
   }
 }
 
-export function logout({ wipeFavorites = false } = {}) {
-  const prev = user.value;
-
-  if (wipeFavorites && prev?.email) {
-    localStorage.removeItem(`favorites:${prev.email}`);
+export async function login({ email, password }) {
+  authError.value = null; // Clear previous errors
+  try {
+    await signInWithEmailAndPassword(auth, email, password);
+    // onAuthStateChanged listener will update the user ref
+  } catch (error) {
+    authError.value = error.message;
+    console.error("Firebase login error:", error.message);
+    throw error; // Re-throw to allow components to handle it
   }
-  user.value = null;
-  localStorage.removeItem("auth:user");
+}
+
+export async function logout() {
+  authError.value = null; // Clear previous errors
+  try {
+    await signOut(auth);
+    // onAuthStateChanged listener will update the user ref
+  } catch (error) {
+    authError.value = error.message;
+    console.error("Firebase logout error:", error.message);
+    throw error; // Re-throw to allow components to handle it
+  }
 }
 
 export const isAutenticated = computed(() => !!user.value);
 
 export function useAuth() {
-  return { user, isAutenticated, login, logout };
+  return { user, isAutenticated, login, logout, register, authError };
 }
