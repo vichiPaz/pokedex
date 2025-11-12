@@ -6,6 +6,7 @@ import vueDevTools from 'vite-plugin-vue-devtools'
 
 // https://vite.dev/config/
 export default defineConfig({
+  base: '/pokedex/', // Adjust this to your repository name if different
   plugins: [
     vue(),
     vueDevTools(),
