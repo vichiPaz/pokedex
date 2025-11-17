@@ -20,7 +20,7 @@ function logoutAndRedirect() {
       <RouterLink v-if="!isAutenticated" to="/login">Login</RouterLink>
       <template v-else>
         <RouterLink to="/favorites">Favoritos</RouterLink>
-        <span class="navbar-greeting"> Hola, {{ user.name }}</span>
+        <span class="navbar-greeting"> Hola, {{ user.email }}</span>
 
         <button class="btn custom-btn__logout" @click="logoutAndRedirect">
           Salir <font-awesome-icon :icon="['far', 'circle-right']" />
