@@ -61,8 +61,7 @@ export async function logout() {
   }
 }
 
-export const isAutenticated = computed(() => !!user.value);
-
 export function useAuth() {
+  const isAutenticated = computed(() => !!user.value);
   return { user, isAutenticated, login, logout, register, authError };
 }
