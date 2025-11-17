@@ -36,27 +36,27 @@ const router = createRouter({
       component: () => NotFoundView,
     },
   ],
-  scrollBehavior(to, from, savedPosition) {
-    console.log("scroll", { to, from, savedPosition });
+  // scrollBehavior(to, from, savedPosition) {
+  //   console.log("scroll", { to, from, savedPosition });
 
-    lastFromRoute.value = from.name;
+  //   lastFromRoute.value = from.name;
 
-    if (to.name === "PokemonDetails") {
-      return { left: 0, top: 0.1 };
-    }
+  //   if (to.name === "PokemonDetails") {
+  //     return { left: 0, top: 0.1 };
+  //   }
 
-    if (to.name === "home") {
-      console.log("va hacia el home");
+  //   if (to.name === "home") {
+  //     console.log("va hacia el home");
 
-      return { top: homeScrollY.value, left: 0 };
-    }
+  //     return { top: homeScrollY.value, left: 0 };
+  //   }
 
-    if (savedPosition) {
-      return savedPosition;
-    }
+  //   if (savedPosition) {
+  //     return savedPosition;
+  //   }
 
-    return { left: 0, top: 0 };
-  },
+  //   return { left: 0, top: 0 };
+  // },
 });
 
 export default router;
